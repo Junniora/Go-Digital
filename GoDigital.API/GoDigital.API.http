@@ -1,0 +1,6 @@
+@GoDigital.API_HostAddress = http://localhost:5044
+
+GET {{GoDigital.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

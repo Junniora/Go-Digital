@@ -1,0 +1,53 @@
+## Archivos generados por compilación de .NET (los más pesados)
+bin/
+obj/
+
+## Archivos de usuario de Visual Studio / Rider
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+## Secretos y configuración local (¡NO subir a GitHub!)
+appsettings.Development.json
+appsettings.*.json
+!appsettings.json
+
+## Archivos de publicación
+publish/
+**/publish/
+
+## Paquetes NuGet (no son necesarios, se restauran automáticamente)
+*.nupkg
+*.snupkg
+**/[Pp]ackages/
+!**/[Pp]ackages/build/
+
+## Logs y archivos temporales
+*.log
+*.tmp
+*.temp
+Logs/
+logs/
+
+## Archivos de base de datos locales
+*.mdf
+*.ldf
+*.ndf
+
+## Variables de entorno
+.env
+.env.local
+.env.*.local
+
+## Archivos de cobertura de tests
+coverage/
+TestResults/
+*.coverage
+*.coveragexml
+
+## Archivos de sistema
+.DS_Store
+Thumbs.db
+desktop.ini

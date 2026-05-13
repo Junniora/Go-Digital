@@ -1,0 +1,12 @@
+## Variables de entorno globales
+.env
+.env.local
+
+## Archivos de sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Editor
+.vscode/settings.json
+.idea/
