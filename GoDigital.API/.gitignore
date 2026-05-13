@@ -13,6 +13,7 @@ obj/
 appsettings.Development.json
 appsettings.*.json
 !appsettings.json
+!appsettings.Development.template.json
 
 ## Archivos de publicación
 publish/
