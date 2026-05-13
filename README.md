@@ -34,15 +34,22 @@ cd Go-Digital
 
 #### 2.1 Crear el archivo de credenciales locales
 
-El archivo `appsettings.json` **no contiene credenciales reales** (por seguridad).  
-Debes crear manualmente el archivo `appsettings.Development.json` dentro de `GoDigital.API/`:
+Ya incluimos un archivo de plantilla para que no tengas que escribir nada desde cero.  
+Solo sigue estos pasos:
 
-```bash
-# Desde la raíz del proyecto
+**En Windows (PowerShell):**
+```powershell
 cd GoDigital.API
+Copy-Item appsettings.Development.template.json appsettings.Development.json
 ```
 
-Crea el archivo `appsettings.Development.json` con el siguiente contenido:
+**En Mac/Linux:**
+```bash
+cd GoDigital.API
+cp appsettings.Development.template.json appsettings.Development.json
+```
+
+Luego abre el archivo `appsettings.Development.json` que se acaba de crear y reemplaza los valores:
 
 ```json
 {
@@ -53,7 +60,8 @@ Crea el archivo `appsettings.Development.json` con el siguiente contenido:
 ```
 
 > ⚠️ Reemplaza `TU_USUARIO` y `TU_CONTRASEÑA` con las credenciales de tu PostgreSQL local.  
-> Por defecto PostgreSQL usa `Username=postgres;Password=postgres`.
+> Si instalaste PostgreSQL con la configuración por defecto, normalmente es:  
+> `Username=postgres` y `Password=postgres`
 
 #### 2.2 Crear la base de datos y aplicar migraciones
 
