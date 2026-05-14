@@ -3,6 +3,7 @@ using System;
 using GoDigital.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GoDigital.API.Migrations
 {
     [DbContext(typeof(GoDigitalDbContext))]
-    partial class GoDigitalDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260514142014_AddAuthToUser")]
+    partial class AddAuthToUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,10 +33,6 @@ namespace GoDigital.API.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -44,9 +43,6 @@ namespace GoDigital.API.Migrations
                     b.Property<string>("FilePath")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
 
                     b.Property<int>("RequestId")
                         .HasColumnType("integer");
@@ -142,9 +138,6 @@ namespace GoDigital.API.Migrations
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
@@ -244,42 +237,6 @@ namespace GoDigital.API.Migrations
                         });
                 });
 
-            modelBuilder.Entity("GoDigital.API.Models.RequestStatusHistory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ChangedByUserId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("FromStatusId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RequestId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ToStatusId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedByUserId");
-
-                    b.HasIndex("FromStatusId");
-
-                    b.HasIndex("RequestId");
-
-                    b.HasIndex("ToStatusId");
-
-                    b.ToTable("RequestStatusHistories");
-                });
-
             modelBuilder.Entity("GoDigital.API.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -371,40 +328,6 @@ namespace GoDigital.API.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("GoDigital.API.Models.RequestStatusHistory", b =>
-                {
-                    b.HasOne("GoDigital.API.Models.User", "ChangedByUser")
-                        .WithMany()
-                        .HasForeignKey("ChangedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GoDigital.API.Models.RequestStatus", "FromStatus")
-                        .WithMany()
-                        .HasForeignKey("FromStatusId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("GoDigital.API.Models.Request", "Request")
-                        .WithMany("StatusHistory")
-                        .HasForeignKey("RequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GoDigital.API.Models.RequestStatus", "ToStatus")
-                        .WithMany()
-                        .HasForeignKey("ToStatusId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ChangedByUser");
-
-                    b.Navigation("FromStatus");
-
-                    b.Navigation("Request");
-
-                    b.Navigation("ToStatus");
-                });
-
             modelBuilder.Entity("GoDigital.API.Models.User", b =>
                 {
                     b.HasOne("GoDigital.API.Models.Department", "Department")
@@ -428,8 +351,6 @@ namespace GoDigital.API.Migrations
                     b.Navigation("Attachments");
 
                     b.Navigation("Comments");
-
-                    b.Navigation("StatusHistory");
                 });
 
             modelBuilder.Entity("GoDigital.API.Models.RequestStatus", b =>

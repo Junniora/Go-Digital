@@ -16,6 +16,7 @@ public class GoDigitalDbContext : DbContext
     public DbSet<RequestStatus> RequestStatuses { get; set; }
     public DbSet<RequestComment> RequestComments { get; set; }
     public DbSet<Attachment> Attachments { get; set; }
+    public DbSet<RequestStatusHistory> RequestStatusHistories { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -63,6 +64,30 @@ public class GoDigitalDbContext : DbContext
             .HasForeignKey(a => a.RequestId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<RequestStatusHistory>()
+            .HasOne(h => h.Request)
+            .WithMany(r => r.StatusHistory)
+            .HasForeignKey(h => h.RequestId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RequestStatusHistory>()
+            .HasOne(h => h.FromStatus)
+            .WithMany()
+            .HasForeignKey(h => h.FromStatusId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<RequestStatusHistory>()
+            .HasOne(h => h.ToStatus)
+            .WithMany()
+            .HasForeignKey(h => h.ToStatusId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<RequestStatusHistory>()
+            .HasOne(h => h.ChangedByUser)
+            .WithMany()
+            .HasForeignKey(h => h.ChangedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Seed Data
         modelBuilder.Entity<RequestStatus>().HasData(
             new RequestStatus { Id = 1, Name = "Nuevo" },
@@ -83,8 +108,7 @@ public class GoDigitalDbContext : DbContext
         );
 
         modelBuilder.Entity<User>().HasData(
-            new User { Id = 1, Name = "Admin User", Email = "admin@godigital.com", DepartmentId = 3 },
-            new User { Id = 2, Name = "HR Manager", Email = "hr@godigital.com", DepartmentId = 1 }
+            // Los usuarios se crean con DbSeeder al arrancar (con contraseñas hasheadas)
         );
     }
 }

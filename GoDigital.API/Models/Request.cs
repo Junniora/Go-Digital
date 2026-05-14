@@ -13,6 +13,7 @@ public class Request
     
     public Priority Priority { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     public int StatusId { get; set; }
     public RequestStatus? Status { get; set; }
@@ -25,4 +26,5 @@ public class Request
 
     public ICollection<RequestComment> Comments { get; set; } = new List<RequestComment>();
     public ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
+    public ICollection<RequestStatusHistory> StatusHistory { get; set; } = new List<RequestStatusHistory>();
 }

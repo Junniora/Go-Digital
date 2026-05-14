@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { requestService } from 'src/services/requestService';
+import { useAuthStore } from 'src/stores/auth';
 import type { DxRequest, RequestFilters, Comment, CreateCommentPayload } from 'src/interfaces';
 
 export const useRequestsStore = defineStore('requests', () => {
@@ -51,8 +52,15 @@ export const useRequestsStore = defineStore('requests', () => {
   async function createRequest(formData: FormData): Promise<boolean> {
     creating.value = true;
     try {
-      const response = await requestService.createRequest(formData);
+      const authStore = useAuthStore();
+      const userId = authStore.user?.id ?? 1;
+      const response = await requestService.createRequest(formData, userId);
       if (response.success) {
+        // After creating, upload any attached files
+        const files = formData.getAll('attachments') as File[];
+        if (files.length > 0) {
+          await requestService.uploadAttachments(response.data.id, files);
+        }
         return true;
       }
       return false;
@@ -61,6 +69,19 @@ export const useRequestsStore = defineStore('requests', () => {
       return false;
     } finally {
       creating.value = false;
+    }
+  }
+
+  async function uploadAttachments(requestId: number, files: File[]): Promise<boolean> {
+    try {
+      const response = await requestService.uploadAttachments(requestId, files);
+      if (response.success && currentRequest.value) {
+        currentRequest.value.attachments.push(...response.data);
+      }
+      return response.success;
+    } catch (err) {
+      console.error('Failed to upload attachments:', err);
+      return false;
     }
   }
 
@@ -90,9 +111,11 @@ export const useRequestsStore = defineStore('requests', () => {
 
   async function updateRequestStatus(requestId: number, statusId: number): Promise<boolean> {
     try {
-      const response = await requestService.updateStatus(requestId, statusId);
+      const authStore = useAuthStore();
+      const userId = authStore.user?.id ?? 1;
+      const response = await requestService.updateStatus(requestId, statusId, userId);
       if (response.success) {
-        // Refresh the current request to get updated status
+        // Refresh the current request to get updated status and history
         await fetchRequestById(requestId);
         return true;
       }
@@ -121,6 +144,7 @@ export const useRequestsStore = defineStore('requests', () => {
     fetchRequests,
     fetchRequestById,
     createRequest,
+    uploadAttachments,
     addComment,
     updateRequestStatus,
     setFilters,

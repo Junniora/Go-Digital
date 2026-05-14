@@ -64,6 +64,13 @@ public class RequestService : IRequestService
             .Include(r => r.User)
             .Include(r => r.Comments)
                 .ThenInclude(c => c.User)
+            .Include(r => r.StatusHistory)
+                .ThenInclude(h => h.FromStatus)
+            .Include(r => r.StatusHistory)
+                .ThenInclude(h => h.ToStatus)
+            .Include(r => r.StatusHistory)
+                .ThenInclude(h => h.ChangedByUser)
+            .Include(r => r.Attachments)
             .FirstOrDefaultAsync(x => x.Id == id);
 
         if (r == null) return null;
@@ -78,6 +85,7 @@ public class RequestService : IRequestService
             ExpectedImpact = r.ExpectedImpact,
             Priority = r.Priority.ToString(),
             CreatedAt = r.CreatedAt,
+            UpdatedAt = r.UpdatedAt,
             UserName = r.User?.Name ?? string.Empty,
             Status = r.Status != null ? new StatusDto { Id = r.Status.Id, Name = r.Status.Name } : null,
             Department = r.Department != null ? new DepartmentDto { Id = r.Department.Id, Name = r.Department.Name } : null,
@@ -87,12 +95,31 @@ public class RequestService : IRequestService
                 Comment = c.Comment,
                 CreatedAt = c.CreatedAt,
                 UserName = c.User?.Name ?? string.Empty
+            }).ToList(),
+            History = r.StatusHistory.OrderBy(h => h.CreatedAt).Select(h => new RequestStatusHistoryDto
+            {
+                Id = h.Id,
+                Action = "status_changed",
+                Description = h.FromStatus != null
+                    ? $"Estado: {h.FromStatus.Name} \u2192 {h.ToStatus?.Name}"
+                    : $"Estado inicial: {h.ToStatus?.Name}",
+                User = h.ChangedByUser?.Name ?? string.Empty,
+                CreatedAt = h.CreatedAt.ToString("o")
+            }).ToList(),
+            Attachments = r.Attachments.OrderBy(a => a.CreatedAt).Select(a => new AttachmentDto
+            {
+                Id = a.Id,
+                Name = a.FileName,
+                Url = a.FilePath,
+                Size = a.FileSize,
+                Type = a.ContentType
             }).ToList()
         };
     }
 
     public async Task<RequestDto> CreateAsync(CreateRequestDto dto)
     {
+        var now = DateTime.UtcNow;
         var request = new Request
         {
             Title = dto.Title,
@@ -104,10 +131,22 @@ public class RequestService : IRequestService
             UserId = dto.UserId,
             DepartmentId = dto.DepartmentId,
             StatusId = 1, // Nuevo
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = now,
+            UpdatedAt = now
         };
 
         _context.Requests.Add(request);
+        await _context.SaveChangesAsync();
+
+        // Record initial status history
+        _context.RequestStatusHistories.Add(new RequestStatusHistory
+        {
+            RequestId = request.Id,
+            FromStatusId = null,
+            ToStatusId = 1,
+            ChangedByUserId = dto.UserId,
+            CreatedAt = now
+        });
         await _context.SaveChangesAsync();
 
         return await GetByIdAsync(request.Id) ?? throw new Exception("Error retrieving created request.");
@@ -118,7 +157,20 @@ public class RequestService : IRequestService
         var request = await _context.Requests.FindAsync(id);
         if (request == null) return false;
 
+        var previousStatusId = request.StatusId;
         request.StatusId = dto.StatusId;
+        request.UpdatedAt = DateTime.UtcNow;
+
+        // Record history entry
+        _context.RequestStatusHistories.Add(new RequestStatusHistory
+        {
+            RequestId = id,
+            FromStatusId = previousStatusId,
+            ToStatusId = dto.StatusId,
+            ChangedByUserId = dto.ChangedByUserId,
+            CreatedAt = DateTime.UtcNow
+        });
+
         await _context.SaveChangesAsync();
         return true;
     }
@@ -149,5 +201,59 @@ public class RequestService : IRequestService
             CreatedAt = comment.CreatedAt,
             UserName = user.Name
         };
+    }
+
+    public async Task<List<AttachmentDto>> UploadAttachmentsAsync(int requestId, IList<IFormFile> files, string baseUrl)
+    {
+        var request = await _context.Requests.FindAsync(requestId)
+            ?? throw new KeyNotFoundException("Request not found");
+
+        // Ensure upload directory exists
+        var uploadDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", requestId.ToString());
+        Directory.CreateDirectory(uploadDir);
+
+        var result = new List<AttachmentDto>();
+
+        foreach (var file in files)
+        {
+            if (file.Length == 0) continue;
+
+            // Generate a unique filename to avoid collisions
+            var ext = Path.GetExtension(file.FileName);
+            var uniqueName = $"{Guid.NewGuid()}{ext}";
+            var fullPath = Path.Combine(uploadDir, uniqueName);
+
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            // Store relative URL so the frontend can download it
+            var relativeUrl = $"{baseUrl}/uploads/{requestId}/{uniqueName}";
+
+            var attachment = new Attachment
+            {
+                RequestId = requestId,
+                FileName = file.FileName,
+                FilePath = relativeUrl,
+                ContentType = file.ContentType,
+                FileSize = file.Length,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Attachments.Add(attachment);
+            await _context.SaveChangesAsync();
+
+            result.Add(new AttachmentDto
+            {
+                Id = attachment.Id,
+                Name = attachment.FileName,
+                Url = attachment.FilePath,
+                Size = attachment.FileSize,
+                Type = attachment.ContentType
+            });
+        }
+
+        return result;
     }
 }

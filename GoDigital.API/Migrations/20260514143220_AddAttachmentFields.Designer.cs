@@ -3,6 +3,7 @@ using System;
 using GoDigital.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GoDigital.API.Migrations
 {
     [DbContext(typeof(GoDigitalDbContext))]
-    partial class GoDigitalDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260514143220_AddAttachmentFields")]
+    partial class AddAttachmentFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

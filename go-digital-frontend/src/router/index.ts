@@ -44,11 +44,14 @@ export default defineRouter((/* { store, ssrContext } */) => {
     }
 
     const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
+    const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
 
     if (requiresAuth && !authStore.isAuthenticated) {
       return { name: 'login', query: { redirect: to.fullPath } };
     } else if (to.name === 'login' && authStore.isAuthenticated) {
       return { name: 'home' };
+    } else if (requiresAdmin && authStore.user?.role !== 'admin') {
+      return { name: 'requests' }; // Non-admins redirected away
     }
     // Allow navigation
     return true;

@@ -23,15 +23,34 @@ const miniState = ref(false);
 const isDark = computed(() => $q.dark.isActive);
 
 const navItems = computed(() => [
-  { icon: 'home', label: t('home'), to: '/', id: 'nav-home' },
-  { icon: 'list_alt', label: t('requests'), to: '/requests', id: 'nav-requests' },
-  { icon: 'add_circle_outline', label: t('createRequest'), to: '/requests/new', id: 'nav-create' },
+  { icon: 'home',              label: t('home'),          to: '/',             id: 'nav-home',    exact: true  },
+  { icon: 'list_alt',          label: t('requests'),      to: '/requests',     id: 'nav-requests',exact: false },
+  { icon: 'add_circle_outline',label: t('createRequest'), to: '/requests/new', id: 'nav-create',  exact: true  },
 ]);
 
-const isActiveRoute = (path: string) => {
-  if (path === '/') return route.path === '/';
-  return route.path.startsWith(path);
-};
+const adminNavItems = computed(() =>
+  authStore.user?.role === 'admin'
+    ? [{ icon: 'manage_accounts', label: 'Usuarios', to: '/admin/users', id: 'nav-users', exact: false }]
+    : []
+);
+
+// Determina cuál nav item está activo — solo UNO puede estar activo a la vez.
+// Prioridad: coincidencia exacta > coincidencia por prefijo
+const activeNavPath = computed(() => {
+  const allItems = [...navItems.value, ...adminNavItems.value];
+
+  // 1. Buscar coincidencia exacta primero
+  const exact = allItems.find((item) => item.exact && route.path === item.to);
+  if (exact) return exact.to;
+
+  // 2. Si no hay exacta, buscar por prefijo (solo rutas no-exactas)
+  const prefix = allItems.find(
+    (item) => !item.exact && (route.path === item.to || route.path.startsWith(item.to + '/'))
+  );
+  return prefix?.to ?? null;
+});
+
+const isActiveRoute = (path: string) => activeNavPath.value === path;
 
 function handleLogout() {
   authStore.logout();
@@ -174,10 +193,8 @@ onMounted(() => {
             v-for="item in navItems"
             :key="item.id"
             clickable
-            :to="item.to"
-            :active="isActiveRoute(item.to)"
-            active-class="nav-item-active"
-            class="nav-item"
+            @click="router.push(item.to)"
+            :class="['nav-item', { 'nav-item-active': isActiveRoute(item.to) }]"
             style="border-radius: 12px; min-height: 48px;"
           >
             <q-item-section avatar>
@@ -187,6 +204,27 @@ onMounted(() => {
               <q-item-label style="font-weight: 500; font-size: 0.9rem;">{{ item.label }}</q-item-label>
             </q-item-section>
           </q-item>
+
+          <!-- Admin section -->
+          <template v-if="adminNavItems.length">
+            <q-separator v-if="!miniState" class="q-my-sm" />
+            <div v-if="!miniState" class="q-px-sm q-pb-xs" style="font-size: 0.7rem; opacity: 0.45; text-transform: uppercase; letter-spacing: 0.08em;">Admin</div>
+            <q-item
+              v-for="item in adminNavItems"
+              :key="item.id"
+              clickable
+              @click="router.push(item.to)"
+              :class="['nav-item', { 'nav-item-active': isActiveRoute(item.to) }]"
+              style="border-radius: 12px; min-height: 48px;"
+            >
+              <q-item-section avatar>
+                <q-icon :name="item.icon" size="22px" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label style="font-weight: 500; font-size: 0.9rem;">{{ item.label }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </template>
         </q-list>
 
         <!-- Bottom spacer + version -->

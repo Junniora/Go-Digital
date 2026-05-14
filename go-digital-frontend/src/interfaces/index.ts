@@ -58,10 +58,25 @@ export interface RequestDto {
   expectedImpact: string;
   priority: string;
   createdAt: string;
+  updatedAt: string;
   status: StatusDto | null;
   department: DepartmentDto | null;
   userName: string;
   comments: RequestCommentDto[];
+  history: {
+    id: number;
+    action: string;
+    description: string;
+    user: string;
+    createdAt: string;
+  }[];
+  attachments: {
+    id: number;
+    name: string;
+    url: string;
+    size: number;
+    type: string;
+  }[];
 }
 
 export interface CreateRequestDto {

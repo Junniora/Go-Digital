@@ -2,7 +2,7 @@ import api, { apiGet, apiPost } from './api';
 import type {
   DxRequest, RequestFilters, PaginatedResponse, ApiResponse,
   RequestDto, RequestCommentDto, CreateRequestDto, CreateCommentDto,
-  Comment,
+  Comment, Attachment,
 } from 'src/interfaces';
 
 const DEV_MOCK = import.meta.env.VITE_DEV_MOCK === 'true';
@@ -24,11 +24,23 @@ function mapRequestDtoToView(dto: RequestDto): DxRequest {
     priority: dto.priority.toLowerCase(),
     status: dto.status?.name ?? 'Nuevo',
     statusId: dto.status?.id ?? 0,
-    attachments: [],
+    attachments: (dto.attachments ?? []).map((a) => ({
+      id: a.id,
+      name: a.name,
+      url: a.url,
+      size: a.size,
+      type: a.type,
+    })),
     comments: (dto.comments ?? []).map((c) => mapCommentDtoToView(c, dto.id)),
-    history: [],
+    history: (dto.history ?? []).map((h) => ({
+      id: h.id,
+      action: h.action,
+      description: h.description,
+      user: h.user,
+      createdAt: h.createdAt,
+    })),
     createdAt: dto.createdAt,
-    updatedAt: dto.createdAt,
+    updatedAt: dto.updatedAt ?? dto.createdAt,
   };
 }
 
@@ -185,7 +197,7 @@ export const requestService = {
   },
 
   // ─── CREATE ───
-  async createRequest(formData: FormData): Promise<ApiResponse<DxRequest>> {
+  async createRequest(formData: FormData, userId: number = 1): Promise<ApiResponse<DxRequest>> {
     if (DEV_MOCK) {
       await new Promise((r) => setTimeout(r, 600));
       const newReq: DxRequest = {
@@ -217,7 +229,7 @@ export const requestService = {
       problem: formData.get('problemOpportunity') as string || '',
       expectedImpact: formData.get('expectedImpact') as string || '',
       priority: (priorityMap[formData.get('priority') as string] || 'Medium') as CreateRequestDto['priority'],
-      userId: 1, // TODO: get from auth store
+      userId: userId,
       departmentId: parseInt(formData.get('departmentId') as string) || 1,
     };
 
@@ -241,13 +253,50 @@ export const requestService = {
   },
 
   // ─── UPDATE STATUS ───
-  async updateStatus(requestId: number, statusId: number): Promise<ApiResponse<boolean>> {
+  async updateStatus(requestId: number, statusId: number, changedByUserId: number = 1): Promise<ApiResponse<boolean>> {
     if (DEV_MOCK) {
       await new Promise((r) => setTimeout(r, 400));
       return { success: true, data: true, message: 'Updated' };
     }
 
-    await api.put(`/Requests/${requestId}/status`, { statusId });
+    await api.put(`/Requests/${requestId}/status`, { statusId, changedByUserId });
     return { success: true, data: true, message: 'Updated' };
   },
+
+  // ─── UPLOAD ATTACHMENTS ───
+  async uploadAttachments(requestId: number, files: File[]): Promise<ApiResponse<Attachment[]>> {
+    if (DEV_MOCK) {
+      await new Promise((r) => setTimeout(r, 600));
+      return { success: true, data: [], message: 'Mock upload' };
+    }
+
+    const formData = new FormData();
+    files.forEach((f) => formData.append('files', f));
+
+    const response = await api.post<AttachmentDto[]>(
+      `/Requests/${requestId}/attachments`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+
+    const attachments: Attachment[] = response.data.map((a) => ({
+      id: a.id,
+      name: a.name,
+      url: a.url,
+      size: a.size,
+      type: a.type,
+    }));
+
+    return { success: true, data: attachments, message: 'Uploaded' };
+  },
 };
+
+// Local type for the backend DTO (only used in this file)
+interface AttachmentDto {
+  id: number;
+  name: string;
+  url: string;
+  size: number;
+  type: string;
+}
+

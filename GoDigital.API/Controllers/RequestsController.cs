@@ -1,10 +1,12 @@
 using GoDigital.API.DTOs;
 using GoDigital.API.Models.Enums;
 using GoDigital.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GoDigital.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class RequestsController : ControllerBase
@@ -66,4 +68,24 @@ public class RequestsController : ControllerBase
             return NotFound(ex.Message);
         }
     }
+
+    [HttpPost("{id}/attachments")]
+    [RequestSizeLimit(52_428_800)] // 50 MB max total
+    public async Task<ActionResult<List<AttachmentDto>>> UploadAttachments(int id, [FromForm] IList<IFormFile> files)
+    {
+        if (files == null || files.Count == 0)
+            return BadRequest(new { message = "No se enviaron archivos." });
+
+        try
+        {
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var attachments = await _requestService.UploadAttachmentsAsync(id, files, baseUrl);
+            return Ok(attachments);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
 }
+

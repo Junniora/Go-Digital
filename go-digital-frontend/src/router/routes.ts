@@ -40,6 +40,12 @@ const routes: RouteRecordRaw[] = [
         name: 'request-detail',
         component: () => import('pages/RequestDetailPage.vue'),
       },
+      {
+        path: 'admin/users',
+        name: 'admin-users',
+        component: () => import('pages/AdminUsersPage.vue'),
+        meta: { requiresAdmin: true },
+      },
     ],
   },
 

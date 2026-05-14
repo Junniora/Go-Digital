@@ -12,6 +12,7 @@ public class RequestDto
     public string ExpectedImpact { get; set; } = string.Empty;
     public string Priority { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
     
     public StatusDto? Status { get; set; }
     public DepartmentDto? Department { get; set; }
@@ -21,4 +22,10 @@ public class RequestDto
     
     // Comments
     public List<RequestCommentDto> Comments { get; set; } = new();
+
+    // Status change history
+    public List<RequestStatusHistoryDto> History { get; set; } = new();
+
+    // Attachments
+    public List<AttachmentDto> Attachments { get; set; } = new();
 }

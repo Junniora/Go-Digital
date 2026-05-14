@@ -35,18 +35,17 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null;
     try {
       const response = await authService.login(payload);
-      if (response.success) {
-        token.value = response.data.token;
-        user.value = response.data.user;
-        authService.setToken(response.data.token);
-        authService.setUser(response.data.user);
-        return true;
-      } else {
-        error.value = response.message || 'Login failed';
-        return false;
-      }
+      // El backend devuelve directamente { token, user }
+      token.value = response.token;
+      user.value = response.user;
+      authService.setToken(response.token);
+      authService.setUser(response.user);
+      return true;
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'An error occurred during login';
+      // Axios lanza un error en respuestas 4xx/5xx
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        ?? (err instanceof Error ? err.message : 'Credenciales incorrectas.');
       error.value = message;
       return false;
     } finally {

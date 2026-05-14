@@ -10,4 +10,6 @@ public interface IRequestService
     Task<RequestDto> CreateAsync(CreateRequestDto dto);
     Task<bool> UpdateStatusAsync(int id, UpdateStatusDto dto);
     Task<RequestCommentDto> AddCommentAsync(int id, CreateCommentDto dto);
+    Task<List<AttachmentDto>> UploadAttachmentsAsync(int requestId, IList<IFormFile> files, string baseUrl);
 }
+
